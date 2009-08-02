@@ -45,10 +45,13 @@ function promptForLogin($serviceName)
 }
 
 if (! file_exists ($mobileMePasswordFile)) {
-    echo "No MobileMe username/password data found. You will need to type your\n";
-    echo "MobileMe username/password. We will save them in $mobileMePasswordFile\n";
-    echo "so you don't have to type it again. If you're not cool with this, you\n";
-    echo "you probably want to delete that file later.\n\n";
+    echo "You will need to type your MobileMe username/password. They will be\n";
+    echo "saved in $mobileMePasswordFile so you don't have to type them again.\n";
+    echo "If you're not cool with this, you probably want to delete that file\n";
+    echo "at some point (they are stored in plaintext).\n\n";
+    echo "You do need a working MobileMe account for playnice to work, and you\n";
+    echo "need to have enabled the Find My iPhone feature on your phone.\n\n";
+    
 
     list($mobileMeUsername, $mobileMePassword) = promptForLogin("MobileMe");
 
