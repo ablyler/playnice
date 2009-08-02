@@ -74,14 +74,6 @@ class iGoogle
 	// echo str_pad(" $this->targetPage Content Follows ",72,"-",STR_PAD_BOTH) . "\n\n";
 	// echo $output . "\n\n";
 
-	// Save Output
-	// Uncomment to save this output to a local html file
-	$out_file="/tmp/iGoogle-output.html";
-	@unlink($out_file);
-	$fp=fopen($out_file,'w');
-	fwrite($fp, $output);
-	fclose($fp);
-
 	// If "Sign out" does not appear in output, login must have failed
 	if (strpos($output,"Sign out")===FALSE) {
 	    echo "It looks like log in to Google failed\n";
