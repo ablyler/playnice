@@ -66,6 +66,8 @@ if (! $google->haveCookie()) {
     echo "No Google cookie found. You will need to authenticate with your\n";
     echo "Google username/password. You should only need to do this once;\n";
     echo "we will save the session cookie for the future.\n\n";
+    echo "Please note that you need to have the Latitude widget on your main\n";
+    echo "iGoogle page for this to work.\n\n";
 
     list($username, $password) = promptForLogin("Google");
 
