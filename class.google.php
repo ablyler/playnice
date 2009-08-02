@@ -76,7 +76,7 @@ class iGoogle
 
 	// If "Sign out" does not appear in output, login must have failed
 	if (strpos($output,"Sign out")===FALSE) {
-	    echo "It looks like log in to Google failed\n";
+	    die ("It looks like log in to Google failed\n");
 	}
 
 	curl_close ($ig);
@@ -169,7 +169,7 @@ class iGoogle
 	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);       // Don't output results of transfer, instead send as return val
 
 	// Execute the curl call
-	$junk=curl_exec($ig);
+	$junk = curl_exec($ig);
     }
 
     public function haveCookie()
