@@ -1,0 +1,4 @@
+
+Debian/Ubuntu: make sure you have the ca-certificates package and the
+php5 package installed.
+
