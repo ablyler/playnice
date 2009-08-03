@@ -113,28 +113,28 @@ class iGoogle
 
 	// First strip of the list of tabs, so we have just gadgets
 	if (! preg_match("/dt:\[.+?\],m:\[(.+)]/",$tabs_and_gadgets[1],$gadgets)) {
-	    die("Couldn't parse out individual gadget variables\n");
+	    die ("Couldn't parse out individual gadget variables\n");
 	}
 
 	// Now seperate out each gadget block
 	if (! preg_match_all("/{(.+?)}/",$gadgets[1],$gadget_blocks)) {
-	    die("Couldn't separate gadget variable blocks\n");
+	    die ("Couldn't separate gadget variable blocks\n");
 	}
 
 	// Now loop through each individual gadget and look for the Latitude gadget,
 	// identified by ti:"Google Latitude"
 	foreach ($gadget_blocks[1] as $var) {
 
-	    if (strstr($var,"ti:\"Google Latitude\"")) {
+	    if (strstr ($var,"ti:\"Google Latitude\"")) {
 		// This is the one we want.  Pull out the max_u var
-		preg_match("/max_u:\"(.+?)\"/",$var,$url);
-		$cleaned_url=str_replace("\\x26","&",$url[1]);
-		parse_str($cleaned_url,$params);
+		preg_match ("/max_u:\"(.+?)\"/",$var,$url);
+		$cleaned_url = str_replace("\\x26","&",$url[1]);
+		parse_str ($cleaned_url,$params);
 
 		// echo "Parameters of the max_u: URL for the Google Latitude gadget are : \n";
 		// print_r($params);
 
-		$st=str_replace("core:core.io:core.iglegacy#","",$params["libs"]);
+		$st = str_replace("core:core.io:core.iglegacy#","",$params["libs"]);
 	    }
 	}
 
@@ -177,6 +177,3 @@ class iGoogle
 	return file_exists($this->cookieFile);
     }
 }
-
-
-
