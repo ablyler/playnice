@@ -48,8 +48,8 @@ class iGoogle
 	curl_setopt($ig, CURLOPT_COOKIEJAR, $this->cookieFile);    // Where to save next cookie info
 	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);      // Don't output results of transfer, instead send as return val
 
-	//curl_setopt($ig, CURLOPT_VERBOSE, TRUE);           // Verbose output for debugging
 	//curl_setopt($ig, CURLOPT_HEADER, TRUE);            // Include headers in output, for debugging
+	//curl_setopt($ig, CURLOPT_VERBOSE, TRUE);           // Verbose output for debugging
 
 	curl_setopt($ig, CURLOPT_POST, TRUE);                 // We're going to be POSTing
 	curl_setopt($ig, CURLOPT_POSTFIELDS, $post_data);     // Send our login data
@@ -113,12 +113,12 @@ class iGoogle
 
 	// First strip of the list of tabs, so we have just gadgets
 	if (! preg_match("/dt:\[.+?\],m:\[(.+)]/",$tabs_and_gadgets[1],$gadgets)) {
-	    die ("Couldn't parse out individual gadget variables\n");
+	    die ("\nCouldn't parse out individual gadget variables\n");
 	}
 
 	// Now seperate out each gadget block
 	if (! preg_match_all("/{(.+?)}/",$gadgets[1],$gadget_blocks)) {
-	    die ("Couldn't separate gadget variable blocks\n");
+	    die ("\nCouldn't separate gadget variable blocks\n");
 	}
 
 	// Now loop through each individual gadget and look for the Latitude gadget,
@@ -141,7 +141,7 @@ class iGoogle
 	if (!empty($st)) {
 	    $this->latitudeToken = str_replace("st=", "", $st);
 	} else {
-	    die ("Error: The Google Latitude security token could not be found.\nGoogle probably broke the screen scraper.\n");
+	    die ("\nError: The Google Latitude security token could not be found.\nIs the Latitude widget on your iGoogle page?\n");
 	}
 
 	echo "\n";
