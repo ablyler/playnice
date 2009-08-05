@@ -58,6 +58,7 @@ if (! file_exists ($mobileMePasswordFile)) {
     $f = fopen ($mobileMePasswordFile, "w");
     fwrite ($f, "<?php\n\$mobileMeUsername=\"$mobileMeUsername\";\n\$mobileMePassword=\"$mobileMePassword\";\n?>\n");
     fclose ($f);
+    chmod($mobileMePasswordFile, 0600);
 
     echo "\n";
 

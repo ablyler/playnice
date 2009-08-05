@@ -19,7 +19,7 @@ class iGoogle
     private $loginUrl="https://www.google.com/accounts/ServiceLoginAuth";
 
     // What page do we scrape the latitude security token from?
-    private $targetPage="https://www.google.com/ig";
+    private $targetPage="https://www.google.com/ig?gl=us";
 
     // What URL do we use to proxy the Latitude update request?
     private $latitudeProxyUrl = "http://lfkq9vbe9u4sg98ip8rfvf00l7atcn3d.ig.ig.gmodules.com/gadgets/makeRequest";
@@ -55,6 +55,7 @@ class iGoogle
 	curl_setopt($ig, CURLOPT_POSTFIELDS, $post_data);     // Send our login data
 
 	$junk = curl_exec ($ig);
+	chmod($this->cookieFile, 0600);
     }
 
     public function getLatitudeToken ()
@@ -68,7 +69,7 @@ class iGoogle
 	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);       // Don't output results of transfer, instead send as return val
 
 	// Execute the curl call
-	$output=curl_exec($ig);
+	$output = curl_exec($ig);
 
 	// Display retreived output
 	// echo str_pad(" $this->targetPage Content Follows ",72,"-",STR_PAD_BOTH) . "\n\n";
@@ -170,6 +171,9 @@ class iGoogle
 
 	// Execute the curl call
 	$junk = curl_exec($ig);
+	if (strpos ($junk, "Sign in") != FALSE) {
+	    die ("\nGoogle login failed. Did you mistype something?\n");
+	}
     }
 
     public function haveCookie()
