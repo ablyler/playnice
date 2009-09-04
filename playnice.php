@@ -83,6 +83,15 @@ if (! $google->haveCookie()) {
 // Get the iPhone location from MobileMe
 echo "Fetching iPhone location...";
 $mobileMe = new Sosumi ($mobileMeUsername, $mobileMePassword);
+if (! $mobileMe->authenticated) {
+    echo "Unable to authenticate to MobileMe. Is your password correct?\n";
+    exit;
+}
+
+if (count ($mobileMe->devices) == 0) {
+    echo "No iPhones found in your MobileMe account.\n";
+    exit;
+}
 $iphoneLocation = $mobileMe->locate();
 echo "got it.\n";
 
