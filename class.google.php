@@ -23,8 +23,8 @@ class googleLatitude
 	public function updateLatitude($lat, $lng, $accuracy)
 	{
 		/* build the post data */
-		$post_data  = "t=ul&mwmct=iphone&mwmcv=5.8&mwmdt=iphone&mwmdv=30102&auto=true&cts=1255656446000&nr=180000&";
-		$post_data .= "lat=$lat&lng=$lng&accuracy=$accuracy";
+		$post_data  = "t=ul&mwmct=iphone&mwmcv=5.8&mwmdt=iphone&mwmdv=30102&auto=true&nr=180000&";
+		$post_data .= "cts=" . time() . "000&lat=$lat&lng=$lng&accuracy=$accuracy";
 
 		/* set the needed header */
 		$header = array("X-ManualHeader: true");
