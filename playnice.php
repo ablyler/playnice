@@ -19,7 +19,7 @@ include 'class.sosumi.php';
 
 $mobileMePasswordFile = "./mobile-me-password.txt";
 
-$google = new iGoogle();
+$google = new googleLatitude();
 
 function promptForLogin($serviceName)
 {

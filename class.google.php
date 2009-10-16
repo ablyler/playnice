@@ -1,183 +1,134 @@
 <?php
 
-// A class to login to iGoogle, save a session cookie, scrape
-// out the iGoogle security token, and update Latitude with a given
-// location.
+// A class to login to Google Latitude Mobile, save a session cookie
+// and update Latitude with a given location.
 //
 // Nat Friedman <nat@nat.org>
 // Jack Catchpoole <jack@catchpoole.com>
+// Andy Blyler <ajb@blyler.cc>
 //
 // MIT license.
 //
 
-class iGoogle
+class googleLatitude
 {
-    private $cookieFile = "./google-cookie.txt"; // Where we store the Google session cookie
-    private $latitudeToken = null; // The Google latitude security token
+	private $cookieFile = "./google-cookie.txt"; // Where we store the Google session cookie
+	private $lastURL;                            // The previous URL as visited by curl
 
-    // Where to login ?
-    private $loginUrl="https://www.google.com/accounts/ServiceLoginAuth";
-
-    // What page do we scrape the latitude security token from?
-    private $targetPage="https://www.google.com/ig?gl=us";
-
-    // What URL do we use to proxy the Latitude update request?
-    private $latitudeProxyUrl = "http://lfkq9vbe9u4sg98ip8rfvf00l7atcn3d.ig.ig.gmodules.com/gadgets/makeRequest";
-
-    // What URL do we use to update Latitude?
-    private $latitudeUpdateUrlPrefix = "http://www.google.com/glm/mmap/ig?t=ul&";
-
-    public function __construct()
-    {
-    }
-
-    public function updateLatitude($lat, $lng, $accuracy)
-    {
-	$this->getLatitudeToken ();
-
-	$ig = curl_init();
-
-	$post_data  = "OAUTH_SERVICE_NAME=google&";
-	$post_data .= "authz=oauth&";
-	$post_data .= "httpMethod=GET&";
-	$post_data .= "st=" . urlencode($this->latitudeToken) . "&";
-	$post_data .= "url=" . urlencode($this->latitudeUpdateUrlPrefix . "lat=$lat&lng=$lng&accuracy=$accuracy");
-
-	curl_setopt($ig, CURLOPT_URL, $this->latitudeProxyUrl);
-	curl_setopt($ig, CURLOPT_COOKIEFILE, $this->cookieFile);   // Where to read cookie info from
-	curl_setopt($ig, CURLOPT_COOKIEJAR, $this->cookieFile);    // Where to save next cookie info
-	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);      // Don't output results of transfer, instead send as return val
-
-	//curl_setopt($ig, CURLOPT_HEADER, TRUE);            // Include headers in output, for debugging
-	//curl_setopt($ig, CURLOPT_VERBOSE, TRUE);           // Verbose output for debugging
-
-	curl_setopt($ig, CURLOPT_POST, TRUE);                 // We're going to be POSTing
-	curl_setopt($ig, CURLOPT_POSTFIELDS, $post_data);     // Send our login data
-
-	$junk = curl_exec ($ig);
-	chmod($this->cookieFile, 0600);
-    }
-
-    public function getLatitudeToken ()
-    {
-	$ig = curl_init();
-
-	// Now we're logged in, grab the /ig page
-	curl_setopt($ig, CURLOPT_URL, $this->targetPage);
-	curl_setopt($ig, CURLOPT_COOKIEFILE, $this->cookieFile);   // Where to read cookie info from
-	curl_setopt($ig, CURLOPT_COOKIEJAR, $this->cookieFile);    // Where to save next cookie info
-	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);       // Don't output results of transfer, instead send as return val
-
-	// Execute the curl call
-	$output = curl_exec($ig);
-
-	// Display retreived output
-	// echo str_pad(" $this->targetPage Content Follows ",72,"-",STR_PAD_BOTH) . "\n\n";
-	// echo $output . "\n\n";
-
-	// If "Sign out" does not appear in output, login must have failed
-	if (strpos($output,"Sign out")===FALSE) {
-	    die ("It looks like log in to Google failed\n");
+	public function __construct()
+	{
 	}
 
-	curl_close ($ig);
+	// Update the location on google latitude
+	public function updateLatitude($lat, $lng, $accuracy)
+	{
+		/* build the post data */
+		$post_data  = "t=ul&mwmct=iphone&mwmcv=5.8&mwmdt=iphone&mwmdv=30102&auto=true&cts=1255656446000&nr=180000&";
+		$post_data .= "lat=$lat&lng=$lng&accuracy=$accuracy";
 
-	// --------------------------------------------------------------------
-	// Now analyse the output, and pull out the required Google Latitude data
-	//
-	// Latitude must be a gadget on the page;  Gadgets and tabs are defined
-	// in a block of JS starting with "_IG_MD_Generate" which AFAICT is unique on
-	// the page.
+		/* set the needed header */
+		$header = array("X-ManualHeader: true");
 
-	// First grab the list of tabs and gadgets, bail out if nothing found
-	if (! preg_match("/_IG_MD_Generate(.+?)<\/script>/",$output,$tabs_and_gadgets)) {
-	    die ("No gadgets identified on iGoogle home page\n");
+		/* execute the location update */
+		$this->curlPost("http://maps.google.com/glm/mmap/mwmfr?hl=en", $post_data, $this->lastURL, $header);
 	}
 
-	// Now all gadgets are in $tabs_and_gadgets[1], examine them.
-	/*
-	 * For me, the format here looks something like this :
-	 *
-	 * ... some stuff ...
-	 * dt: [0, 1, 2, 3],
-	 * m: [
-	 * {... gadget 1 stuff ...}
-	 * {... gadget 2 stuff ...}
-	 * {... gadget 3 stuff ...
-	 * view: {...max_u: "..."}
-	 * }
-	 * ...etc...
-	 * ]
-	 * });
-	 *
-	 */
+	// Login to google and save the cookie in $cookieFile
+	public function login($username, $password)
+	{
+		/* obtain needed cookies from the mobile latitude site */
+		$html = $this->curlGet("http://maps.google.com/maps/m?mode=latitude");
 
-	// First strip of the list of tabs, so we have just gadgets
-	if (! preg_match("/dt:\[.+?\],m:\[(.+)]/",$tabs_and_gadgets[1],$gadgets)) {
-	    die ("\nCouldn't parse out individual gadget variables\n");
+		/* obtain login form and cookies */
+		$html = $this->curlGet("https://www.google.com/accounts/ServiceLogin?service=friendview&hl=en&nui=1&continue=http://maps.google.com/maps/m%3Fmode%3Dlatitude", $this->lastURL);
+
+		/* parse out the hidden fields */
+		preg_match_all('!hidden.*?name=["\'](.*?)["\'].*?value=["\'](.*?)["\']!ms', $html, $hidden);
+
+		/* build post data */
+		$post_data = '';
+		for($i = 0; $i < count($hidden[1]); $i++)
+		{
+			$post_data .= $hidden[1][$i] . '=' . urlencode($hidden[2][$i]) . '&';
+		}
+
+		$post_data .= "signIn=Sign+in&PersistentCookie=yes";
+		$post_data .= "&Email=$username";
+		$post_data .= "&Passwd=$password";
+
+		/* execute the login */
+		$html = $this->curlPost("https://www.google.com/accounts/ServiceLoginAuth?service=friendview", $post_data, $this->lastURL);
+
+		/* verify the login was successful */
+		if (strpos ($html, "Sign in") != FALSE)
+		{
+			die ("\nGoogle login failed. Did you mistype something?\n");
+		}
+
+		/* reset the permissions of the cookie file */
+		chmod($this->cookieFile, 0600);
 	}
 
-	// Now seperate out each gadget block
-	if (! preg_match_all("/{(.+?)}/",$gadgets[1],$gadget_blocks)) {
-	    die ("\nCouldn't separate gadget variable blocks\n");
+	public function haveCookie()
+	{
+		return file_exists($this->cookieFile);
 	}
 
-	// Now loop through each individual gadget and look for the Latitude gadget,
-	// identified by ti:"Google Latitude"
-	foreach ($gadget_blocks[1] as $var) {
+	private function curlGet($url, $referer = null, $headers = null)
+	{
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookieFile);
+		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookieFile);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_1_2 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7D11 Safari/528.16");
+		if(!is_null($referer)) curl_setopt($ch, CURLOPT_REFERER, $referer);
+		if(!is_null($headers)) curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-	    if (strstr ($var,"ti:\"Google Latitude\"")) {
-		// This is the one we want.  Pull out the max_u var
-		preg_match ("/max_u:\"(.+?)\"/",$var,$url);
-		$cleaned_url = str_replace("\\x26","&",$url[1]);
-		parse_str ($cleaned_url,$params);
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		// curl_setopt($ch, CURLOPT_VERBOSE, true);
 
-		// echo "Parameters of the max_u: URL for the Google Latitude gadget are : \n";
-		// print_r($params);
+		$html = curl_exec($ch);
 
-		$st = str_replace("core:core.io:core.iglegacy#","",$params["libs"]);
-	    }
+		if (curl_errno($ch) != 0)
+		{
+			die("\nError during GET of '$url': " . curl_error($ch) . "\n");
+		}
+
+		$this->lastURL = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+
+		return $html;
 	}
 
-	if (!empty($st)) {
-	    $this->latitudeToken = str_replace("st=", "", $st);
-	} else {
-	    die ("\nError: The Google Latitude security token could not be found.\nIs the Latitude widget on your iGoogle page?\n");
+	private function curlPost($url, $post_vars = null, $referer = null, $headers = null)
+	{
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookieFile);
+		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookieFile);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_1_2 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7D11 Safari/528.16");
+		if(!is_null($referer)) curl_setopt($ch, CURLOPT_REFERER, $referer);
+		curl_setopt($ch, CURLOPT_POST, true);
+		if(!is_null($post_vars)) curl_setopt($ch, CURLOPT_POSTFIELDS, $post_vars);
+		if(!is_null($headers)) curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		// curl_setopt($ch, CURLOPT_VERBOSE, true);
+
+		$html = curl_exec($ch);
+
+		if (curl_errno($ch) != 0)
+		{
+			die("\nError during POST of '$url': " . curl_error($ch) . "\n");
+		}
+
+		$this->lastURL = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+
+		return $html;
 	}
-
-	echo "\n";
-    }
-
-    // Login to google and save the cookie in $cookieFile
-    public function login($username, $password)
-    {
-	$ig = curl_init();
-	$post_data  = "continue=http://www.google.com/ig";
-	$post_data .= "&followup=http://www.google.com/ig";
-	$post_data .= "&service=ig";
-	$post_data .= "&Email=$username";
-	$post_data .= "&Passwd=$password";
-	$post_data .= "&submit=Sign in";
-	curl_setopt($ig, CURLOPT_URL, $this->loginUrl);
-
-	//curl_setopt($ig, CURLOPT_VERBOSE, TRUE);           // Verbose output for debugging
-	//curl_setopt($ig, CURLOPT_HEADER, TRUE);            // Include headers in output, for debugging
-
-	curl_setopt($ig, CURLOPT_FOLLOWLOCATION, TRUE);       // Follow any Location: headers
-	curl_setopt($ig, CURLOPT_POST, TRUE);                 // We're going to be POSTing
-	curl_setopt($ig, CURLOPT_POSTFIELDS, $post_data);     // Send our login data
-	curl_setopt($ig, CURLOPT_COOKIEJAR, $this->cookieFile);    // Where to save cookie info for next time
-	curl_setopt($ig, CURLOPT_RETURNTRANSFER, TRUE);       // Don't output results of transfer, instead send as return val
-
-	// Execute the curl call
-	$junk = curl_exec($ig);
-	if (strpos ($junk, "Sign in") != FALSE) {
-	    die ("\nGoogle login failed. Did you mistype something?\n");
-	}
-    }
-
-    public function haveCookie()
-    {
-	return file_exists($this->cookieFile);
-    }
 }
