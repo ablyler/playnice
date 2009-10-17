@@ -34,6 +34,44 @@ class googleLatitude
 		$this->curlPost("http://maps.google.com/glm/mmap/mwmfr?hl=en", $post_data, $this->lastURL, $header);
 	}
 
+	/* obtain listing of friends and their location */
+	public function friendList()
+	{
+		/* create the friend output array */
+		$friends = array();
+
+		/* build the post data */
+		$post_data  = "t=fs&mwmct=iphone&mwmcv=5.8&mwmdt=iphone&mwmdv=30102&gpsc=false";
+
+		/* set the needed header */
+		$header = array("X-ManualHeader: true");
+
+		/* execute the http request */
+		$response = $this->curlPost("http://maps.google.com/glm/mmap/mwmfr?hl=en", $post_data, $this->lastURL, $header);
+
+		/* parse out the friends from the response */
+		if (preg_match_all('/,\[,\[,"-?\d+",3,1,1,,0\]\n,"(?<email>[^"]+)","(?<name>[^"]+)",(?<phone>[^,]*),(?<lat>-?\d+),(?<lon>-?\d+),"(?<timestamp>\d{10})\d{3}",(?<accuracy>\d*),\["(?<address>[^"]*)","(?<city_state>[^"]*)"]/', $response, $matches, PREG_SET_ORDER))
+		{
+			/* create friendly output array */
+			foreach ($matches as $match)
+			{
+				$friends[] = array(
+						"name"			=> $match["name"],
+						"email"			=> $match["email"],
+						"phone"			=> $match["phone"],
+						"lat"			=> $match["lat"],
+						"lon"			=> $match["lon"],
+						"accuracy"		=> $match["accuracy"],
+						"timestamp"		=> $match["timestamp"],
+						"address"		=> $match["address"],
+						"city_state"	=> $match["city_state"],
+					);
+			}
+		}
+		
+		return $friends;
+	}
+
 	// Login to google and save the cookie in $cookieFile
 	public function login($username, $password)
 	{
