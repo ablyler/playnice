@@ -12,11 +12,12 @@
 
 class googleLatitude
 {
-	private $cookieFile = "./google-cookie.txt"; // Where we store the Google session cookie
-	private $lastURL;                            // The previous URL as visited by curl
+	private $cookieFile; // Where we store the Google session cookie
+	private $lastURL;    // The previous URL as visited by curl
 
 	public function __construct()
 	{
+		$this->cookieFile = dirname(__FILE__) . "/google-cookie.txt";
 	}
 
 	// Update the location on google latitude
@@ -62,6 +63,7 @@ class googleLatitude
 		/* verify the login was successful */
 		if (strpos ($html, "Sign in") != FALSE)
 		{
+			unlink($this->cookieFile);
 			die ("\nGoogle login failed. Did you mistype something?\n");
 		}
 
