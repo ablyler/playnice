@@ -1,5 +1,4 @@
-All users: make sure the Latitude widget is installed on your iGoogle
-page. Make sure you have PHP5.
+All users: Make sure you have PHP5.
 
 Debian/Ubuntu: make sure you have the ca-certificates package and the
 php5 package installed.
@@ -7,5 +6,3 @@ php5 package installed.
 Windows: This script doesn't work on windows.
 
 Mac: this script should work out of the box.
-
-
