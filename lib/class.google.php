@@ -102,11 +102,12 @@ class googleLatitude
 		if (strpos ($html, "Sign in") != FALSE)
 		{
 			unlink($this->cookieFile);
-			die ("\nGoogle login failed. Did you mistype something?\n");
+			return false;
 		}
 
 		/* reset the permissions of the cookie file */
 		chmod($this->cookieFile, 0600);
+		return true;
 	}
 
 	public function haveCookie()
