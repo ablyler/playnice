@@ -28,6 +28,7 @@ include_once(BASE_PATH . "/lib/sosumi/class.sosumi.php");
 $statusFile = BASE_PATH . "/status.txt";
 $googlePasswordFile = BASE_PATH . "/google-password.txt";
 $mobileMePasswordFile = BASE_PATH . "/mobile-me-password.txt";
+$logFile = BASE_PATH . "/log.txt";
 
 // Check the status to see if we should wait to run again
 if (file_exists($statusFile))
@@ -127,6 +128,9 @@ do
 
 echo "got it.\n";
 echo "iPhone location: $iphoneLocation->latitude, $iphoneLocation->longitude as of: $iphoneLocation->date $iphoneLocation->time\n";
+
+// Log the location
+file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy\n", FILE_APPEND);
 
 // Calculate how far the device has moved (if we know the pervious location)
 if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accuracy"])))
