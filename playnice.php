@@ -24,64 +24,34 @@ $mobileMePasswordFile = BASE_PATH . "/mobile-me-password.txt";
 
 $google = new googleLatitude();
 
-if (! file_exists ($googlePasswordFile)) {
-    echo "You will need to type your Google Latitude username/password. They will be\n";
-    echo "saved in $googlePasswordFile so you don't have to type them again.\n";
-    echo "If you're not cool with this, you probably want to delete that file\n";
-    echo "at some point (they are stored in plaintext).\n\n";
-    echo "You do need a working Google Latitude account for playnice to work.\n\n";
-
-    list($googleUsername, $googlePassword) = promptForLogin("Google");
-
-	// save the credentials
-	if (!file_put_contents($googlePasswordFile, "<?php\n\$googleUsername=\"$googleUsername\";\n\$googlePassword=\"$googlePassword\";\n?>\n")) {
-		echo "Unable to save Google credentials to $googlePasswordFile, please check permissions.\n";
-		exit;
-	}
-
-	// change the permissions of the password file
-    chmod($googlePasswordFile, 0600);
-
-    echo "\n";
-
-} else {
+// Login to Google
+@include($googlePasswordFile);
+while ((file_exists($googlePasswordFile) == false) || ($google->login($googleUsername, $googlePassword) == false))
+{	
+    promptForLogin("Google", $googlePasswordFile, "google");
     @include($googlePasswordFile);
 }
 
-
-if (! file_exists ($mobileMePasswordFile)) {
-    echo "You will need to type your MobileMe username/password. They will be\n";
-    echo "saved in $mobileMePasswordFile so you don't have to type them again.\n";
-    echo "If you're not cool with this, you probably want to delete that file\n";
-    echo "at some point (they are stored in plaintext).\n\n";
-    echo "You do need a working MobileMe account for playnice to work, and you\n";
-    echo "need to have enabled the Find My iPhone feature on your phone.\n\n";
-
-    list($mobileMeUsername, $mobileMePassword) = promptForLogin("MobileMe");
-
-	// save the credentials
-	if (!file_put_contents($mobileMePasswordFile, "<?php\n\$mobileMeUsername=\"$mobileMeUsername\";\n\$mobileMePassword=\"$mobileMePassword\";\n?>\n")) {
-		echo "Unable to save MobileMe credentials to $mobileMePasswordFile, please check permissions.\n";
-		exit;
+// Login to MobileMe
+do
+{
+	if (file_exists($mobileMePasswordFile) == false)
+	{
+		promptForLogin("MobileMe", $mobileMePasswordFile, "mobileMe");
 	}
 
-	// change the permissions of the password file
-    chmod($mobileMePasswordFile, 0600);
-
-    echo "\n";
-
-} else {
     @include($mobileMePasswordFile);
-}
+
+	$mobileMe = new Sosumi($mobileMeUsername, $mobileMePassword);
+	
+	if ($mobileMe->authenticated == false)
+	{
+		unlink($mobileMePasswordFile);
+	}
+} while ($mobileMe->authenticated == false);
 
 // Get the iPhone location from MobileMe
 echo "Fetching iPhone location...";
-
-$mobileMe = new Sosumi ($mobileMeUsername, $mobileMePassword);
-if (! $mobileMe->authenticated) {
-    echo "Unable to authenticate to MobileMe. Is your password correct?\n";
-    exit;
-}
 
 if (count ($mobileMe->devices) == 0) {
     echo "No iPhones found in your MobileMe account.\n";
@@ -95,11 +65,6 @@ echo "iPhone location: $iphoneLocation->latitude, $iphoneLocation->longitude\n";
 
 
 // Now update Google Latitude
-if (! $google->login($googleUsername, $googlePassword)) {
-	echo "Unable to authenticate to Google. Is your password correct?\n";
-    exit;
-}
-
 echo "Updating Google Latitude...";
 $google->updateLatitude($iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy);
 
@@ -108,8 +73,16 @@ echo "Done!\n";
 
 
 
-function promptForLogin($serviceName)
+function promptForLogin($serviceName, $passwordFile, $variablePrefix)
 {
+	echo "\n";
+    echo "You will need to type your $serviceName username/password. Because this\n";
+    echo "is the first time you are running this script, or because authentication\n";
+    echo "has failed.\n\n";
+    echo "NOTE: They will be saved in $passwordFile so you don't have to type them again.\n";
+    echo "If you're not cool with this, you probably want to delete that file\n";
+    echo "at some point (they are stored in plaintext).\n\n";
+
     echo "$serviceName username: ";
     $username = trim(fgets(STDIN));
 
@@ -128,5 +101,11 @@ function promptForLogin($serviceName)
 		die ("Error: No password specified.\n");
     }
 
-    return array ($username, $password);
+	if (!file_put_contents($passwordFile, "<?php\n\$" . $variablePrefix . "Username=\"$username\";\n\$" . $variablePrefix . "Password=\"$password\";\n?>\n")) {
+		echo "Unable to save $serviceName credentials to $passwordFile, please check permissions.\n";
+		exit;
+	}
+
+    // change the permissions of the password file
+	chmod($passwordFile, 0600);
 }
