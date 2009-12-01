@@ -138,9 +138,12 @@ if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accura
 	$distance = distance($status["lat"], $status["lon"], $status["accuracy"], $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy);
 	echo "Device has moved: $distance km\n";
 
-	// Update the has not moved count if the device has not moved
+	// Update the count by either increasing it if the device has not moved
+	// or resetting it to zero if the device has moved
 	if ($distance == 0)
 		$status["count"]++;
+	else
+		$status["count"] = 0;
 }
 
 // Now update Google Latitude
