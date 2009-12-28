@@ -65,26 +65,26 @@ $google = new googleLatitude();
 @include($googlePasswordFile);
 while ((file_exists($googlePasswordFile) == false) || ($google->login($googleUsername, $googlePassword) == false))
 {
-    promptForLogin("Google", $googlePasswordFile, "google");
-    @include($googlePasswordFile);
+	promptForLogin("Google", $googlePasswordFile, "google");
+	@include($googlePasswordFile);
 }
 
 // Login to MobileMe
+$prompt = false;
 do
 {
-	if (file_exists($mobileMePasswordFile) == false)
+	if ($prompt || file_exists($mobileMePasswordFile) == false)
 	{
 		promptForLogin("MobileMe", $mobileMePasswordFile, "mobileMe");
 	}
 
-    @include($mobileMePasswordFile);
+	@include($mobileMePasswordFile);
 
 	$mobileMe = new Sosumi($mobileMeUsername, $mobileMePassword);
 
 	if ($mobileMe->authenticated == false)
-	{
-		unlink($mobileMePasswordFile);
-	}
+		$prompt = true;
+
 } while ($mobileMe->authenticated == false);
 
 // Get the iPhone location from MobileMe
