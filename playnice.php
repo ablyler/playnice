@@ -115,8 +115,8 @@ do
         exit();
     }
 
-	// Convert the datetime to a unix timestamp
-    $timestamp = strtotime($iphoneLocation->date . " " . $iphoneLocation->time);
+	// Strip off microtime from unix timestamp
+    $timestamp = substr($iphoneLocation->timeStamp, 0, 11);
 
     if ($timestamp == false)
     {
@@ -127,10 +127,10 @@ do
 } while (($timestamp < ($time - (60 * 2))) && ($try <= 6));
 
 echo "got it.\n";
-echo "iPhone location: $iphoneLocation->latitude, $iphoneLocation->longitude as of: $iphoneLocation->date $iphoneLocation->time\n";
+echo "iPhone location: $iphoneLocation->latitude, $iphoneLocation->longitude as of: " . date("Y-m-d G:i:s T") . "\n";
 
 // Log the location
-file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy\n", FILE_APPEND);
+file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy\n", FILE_APPEND);
 
 // Calculate how far the device has moved (if we know the pervious location)
 if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accuracy"])))
@@ -148,13 +148,13 @@ if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accura
 
 // Now update Google Latitude
 echo "Updating Google Latitude...";
-$google->updateLatitude($iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy);
+$google->updateLatitude($iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy);
 
 // Update status
 $status["last_updated"] = time();
 $status["lat"] = $iphoneLocation->latitude;
 $status["lon"] = $iphoneLocation->longitude;
-$status["accuracy"] = $iphoneLocation->accuracy;
+$status["accuracy"] = $iphoneLocation->horizontalAccuracy;
 
 file_put_contents($statusFile, serialize($status));
 
