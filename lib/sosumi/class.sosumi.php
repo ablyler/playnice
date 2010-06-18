@@ -32,7 +32,7 @@
             $this->authenticated = false;
 
             // Load the HTML login page and also get the init cookies set
-            $html = $this->curlGet("https://auth.me.com/authenticate?service=account&ssoNamespace=primary-me&reauthorize=Y&returnURL=aHR0cHM6Ly9zZWN1cmUubWUuY29tL2FjY291bnQvI2ZpbmRteWlwaG9uZQ==&anchor=findmyiphone");
+	        $html = $this->curlGet('https://auth.me.com/authenticate?service=findmyiphone&ssoNamespace=primary-me&reauthorize=Y&returnURL=aHR0cHM6Ly9zZWN1cmUubWUuY29tL2ZpbmQv&anchor=findmyiphone', 'https://secure.me.com/find/');
 
             // Parse out the hidden fields
             preg_match_all('!hidden.*?name=["\'](.*?)["\'].*?value=["\'](.*?)["\']!ms', $html, $hidden);
@@ -41,15 +41,21 @@
             $post = '';
             for($i = 0; $i < count($hidden[1]); $i++)
                 $post .= $hidden[1][$i] . '=' . urlencode($hidden[2][$i]) . '&';
-            $post  .= 'username=' . urlencode($mobile_me_username) . '&password=' . urlencode($mobile_me_password);
+            $post  .= 'service=findmyiphone&username=' . urlencode($mobile_me_username) . '&password=' . urlencode($mobile_me_password);
 
             // Login
             $action_url = $this->match('!action=["\'](.*?)["\']!ms', $html, 1);
             $html = $this->curlPost('https://auth.me.com/authenticate', $post, $this->lastURL);
-            $html = $this->curlGet('https://secure.me.com/account/', $this->lastURL);
+            $html = $this->curlGet('https://secure.me.com/find/', $this->lastURL);
 
-            $headers = array('X-Mobileme-Version: 1.0');
-            $html = $this->curlGet('https://secure.me.com/wo/WebObjects/Account2.woa?lang=en&anchor=findmyiphone', $this->lastURL, $headers);
+            $headers = array(
+                "X-Requested-With: XMLHttpRequest",
+                "X-SproutCore-Version: 1.0",
+                "X-Mobileme-Version: 1.0",
+                "X-Inactive-Time: 1187",
+                );
+
+            $html = $this->curlPost('https://secure.me.com/fmipservice/client/initClient', '{"clientContext":{"appName":"MobileMe Find (Web)","appVersion":"1.0"}}', $this->lastURL, $headers);
 
             if(count($this->lsc) > 0)
             {
@@ -67,18 +73,13 @@
         // Returns a stdClass object of location information. Example...
         // stdClass Object
         // (
-        //     [isLocationAvailable] => 1
-        //     [longitude] => -121.010392
-        //     [accuracy] => 47.421634
-        //     [time] => 9:24 PM
-        //     [isOldLocationResult] => 1
-        //     [isRecent] => 1
-        //     [statusString] => locate status available
-        //     [status] => 1
-        //     [isLocateFinished] =>
-        //     [latitude] => 38.319117
-        //     [date] => June 22, 2009
-        //     [isAccurate] =>
+        //     [timeStamp] => 1276860727473
+        //     [positionType] => Wifi
+        //     [horizontalAccuracy] => 250
+        //     [locationFinished] => 
+        //     [longitude] => -83.74480879
+        //     [latitude] => 42.28812164
+        //     [isOld] =>
         // )
         public function locate($the_device = null)
         {
@@ -89,19 +90,7 @@
                 $the_device = current($this->devices);
             }
 
-            $arr = array('deviceId' => $the_device['deviceId'], 'deviceOsVersion' => $the_device['deviceOsVersion']);
-
-            $post = 'postBody=' . json_encode($arr);
-
-            $headers = array('Accept: text/javascript, text/html, application/xml, text/xml, */*',
-                             'X-Requested-With: XMLHttpRequest',
-                             'X-Prototype-Version: 1.6.0.3',
-                             'Content-Type: application/json; charset=UTF-8',
-                             'X-Mobileme-Version: 1.0',
-                             'X-Mobileme-Isc: ' . $this->lsc['secure.me.com']);
-            $html = $this->curlPost('https://secure.me.com/wo/WebObjects/DeviceMgmt.woa/wa/LocateAction/locateStatus', $post, 'https://secure.me.com/account/', $headers, false);
-            $json = json_decode($html);
-            return $json;
+            return $the_device->location;
         }
 
         // Send a message to the device with an optional alarm sound
@@ -149,26 +138,16 @@
         {
             $headers = array('Accept: text/javascript, text/html, application/xml, text/xml, */*',
                              'X-Requested-With: XMLHttpRequest',
-                             'X-Prototype-Version: 1.6.0.3',
                              'X-Mobileme-Version: 1.0',
+                             'X-SproutCore-Version: 1.0',
                              'X-Mobileme-Isc: ' . $this->lsc['secure.me.com']);
-            $html = $this->curlPost('https://secure.me.com/device_mgmt/en', null, 'https://secure.me.com/account/', $headers);
+            $html = $this->curlPost('https://secure.me.com/fmipservice/client/refreshClient', null, 'https://secure.me.com/find/', $headers, false);
 
-            $headers = array('Accept: text/javascript, text/html, application/xml, text/xml, */*',
-                             'X-Requested-With: XMLHttpRequest',
-                             'X-Prototype-Version: 1.6.0.3',
-                             'X-Mobileme-Version: 1.0',
-                             'X-Mobileme-Isc: ' . $this->lsc['secure.me.com']);
-            $html = $this->curlPost('https://secure.me.com/wo/WebObjects/DeviceMgmt.woa/?lang=en', null, 'https://secure.me.com/account/', $headers);
+            // Convert the raw json into an json object
+            $json = json_decode($html);
 
             // Grab all of the devices
-            preg_match_all('/new Device\((.*?)\)/ms', $html, $matches);
-            for($i = 0; $i < count($matches[0]); $i++)
-            {
-                $values = str_replace("'", '', $matches[1][$i]);
-                list($unknown, $id, $type, $class, $os) = explode(',', $values);
-                $this->devices[$id] = array('deviceId' => $id, 'deviceType' => $type, 'deviceClass' => $class, 'deviceOsVersion' => $os);
-            }
+            $this->devices = $json->content;
         }
 
         private function curlGet($url, $referer = null, $headers = null)
