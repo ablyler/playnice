@@ -135,7 +135,7 @@ file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocati
 // Calculate how far the device has moved (if we know the pervious location)
 if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accuracy"])))
 {
-	$distance = distance($status["lat"], $status["lon"], $status["accuracy"], $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->accuracy);
+	$distance = distance($status["lat"], $status["lon"], $status["accuracy"], $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy);
 	echo "Device has moved: $distance km\n";
 
 	// Update the count by either increasing it if the device has not moved
