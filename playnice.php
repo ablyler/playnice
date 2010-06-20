@@ -80,12 +80,15 @@ do
 
 	@include($mobileMePasswordFile);
 
-	$mobileMe = new Sosumi($mobileMeUsername, $mobileMePassword);
-
-	if ($mobileMe->authenticated == false)
+	try
+	{
+		$mobileMe = new Sosumi($mobileMeUsername, $mobileMePassword);
+	}
+	catch (Exception $exception)
+	{
 		$prompt = true;
-
-} while ($mobileMe->authenticated == false);
+	}
+} while ($prompt === true);
 
 // Get the iPhone location from MobileMe
 echo "Fetching iPhone location...";
@@ -109,14 +112,14 @@ do
     $iphoneLocation = $mobileMe->locate();
 
 	// Verify we got a location back
-    if ((empty($iphoneLocation->latitude)) || (empty($iphoneLocation->longitude)))
+    if ((empty($iphoneLocation["latitude"])) || (empty($iphoneLocation["longitude"])))
     {
         echo "Error obtaining location\n";
         exit();
     }
 
 	// Strip off microtime from unix timestamp
-    $timestamp = substr($iphoneLocation->timeStamp, 0, 11);
+    $timestamp = substr($iphoneLocation["timestamp"], 0, 11);
 
     if ($timestamp == false)
     {
@@ -127,15 +130,15 @@ do
 } while (($timestamp < ($time - (60 * 2))) && ($try <= 6));
 
 echo "got it.\n";
-echo "iPhone location: $iphoneLocation->latitude, $iphoneLocation->longitude as of: " . date("Y-m-d G:i:s T") . "\n";
+echo "iPhone location: " . $iphoneLocation["latitude"] . ", " . $iphoneLocation["longitude"] . " as of: " . date("Y-m-d G:i:s T") . "\n";
 
 // Log the location
-file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy\n", FILE_APPEND);
+file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation{'latitude'}, $iphoneLocation{'longitude'}, $iphoneLocation{'accuracy'}\n", FILE_APPEND);
 
 // Calculate how far the device has moved (if we know the pervious location)
 if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accuracy"])))
 {
-	$distance = distance($status["lat"], $status["lon"], $status["accuracy"], $iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy);
+	$distance = distance($status["lat"], $status["lon"], $status["accuracy"], $iphoneLocation["latitude"], $iphoneLocation["longitude"], $iphoneLocation["accuracy"]);
 	echo "Device has moved: $distance km\n";
 
 	// Update the count by either increasing it if the device has not moved
@@ -148,13 +151,13 @@ if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accura
 
 // Now update Google Latitude
 echo "Updating Google Latitude...";
-$google->updateLatitude($iphoneLocation->latitude, $iphoneLocation->longitude, $iphoneLocation->horizontalAccuracy);
+$google->updateLatitude($iphoneLocation["latitude"], $iphoneLocation["longitude"], $iphoneLocation["accuracy"]);
 
 // Update status
 $status["last_updated"] = time();
-$status["lat"] = $iphoneLocation->latitude;
-$status["lon"] = $iphoneLocation->longitude;
-$status["accuracy"] = $iphoneLocation->horizontalAccuracy;
+$status["lat"] = $iphoneLocation["latitude"];
+$status["lon"] = $iphoneLocation["longitude"];
+$status["accuracy"] = $iphoneLocation["accuracy"];
 
 file_put_contents($statusFile, serialize($status));
 
