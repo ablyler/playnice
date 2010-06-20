@@ -4,5 +4,5 @@ lib/sosumi:
   url: git://github.com/ablyler/sosumi.git
   branch: master
   type: git
-  revision: bbea01f987ba013eb911ba6f8294f5c7640255a2
+  revision: dad3f849706f8dd7adf386477371e742f236882c
   remote: braid/lib/sosumi

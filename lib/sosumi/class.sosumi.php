@@ -1,5 +1,4 @@
 <?PHP
-
     // Sosumi - a Find My iPhone web scraper.
     //
     // June 22, 2009
@@ -11,8 +10,6 @@
     // $location_info = $ssm->locate();
     // $ssm->sendMessage('Daisy, daisy...');
     //
-    // TODO: Need to see how many HTTP requests we can remove. The current
-    // implementation hasn't been minified yet.
 
     class Sosumi
     {
@@ -21,7 +18,7 @@
         private $lastURL;  // The previous URL as visited by curl
         private $tmpFile;  // Where we store our cookies
         private $lsc;      // Associative array of Apple auth tokens
-        private $deviceId; // The device ID to ping
+		private $username;
 
         public function __construct($mobile_me_username, $mobile_me_password)
         {
@@ -30,6 +27,7 @@
             $this->lsc     = array();
             $this->devices = array();
             $this->authenticated = false;
+			$this->username = $mobile_me_username;
 
             // Load the HTML login page and also get the init cookies set
 	        $html = $this->curlGet('https://auth.me.com/authenticate?service=findmyiphone&ssoNamespace=primary-me&reauthorize=Y&returnURL=aHR0cHM6Ly9zZWN1cmUubWUuY29tL2ZpbmQv&anchor=findmyiphone', 'https://secure.me.com/find/');
@@ -70,56 +68,30 @@
                 unlink($this->tmpFile);
         }
 
-        // Returns a stdClass object of location information. Example...
-        // stdClass Object
-        // (
-        //     [timeStamp] => 1276860727473
-        //     [positionType] => Wifi
-        //     [horizontalAccuracy] => 250
-        //     [locationFinished] => 
-        //     [longitude] => -83.74480879
-        //     [latitude] => 42.28812164
-        //     [isOld] =>
-        // )
-        public function locate($the_device = null)
+       public function locate($device_number = 0)
         {
-            // Grab the first device is none is specified
-            if(is_null($the_device))
-            {
-                reset($this->devices);
-                $the_device = current($this->devices);
-            }
-
-            return $the_device->location;
+			return $this->devices[$device_number]->location;
         }
 
         // Send a message to the device with an optional alarm sound
-        public function sendMessage($msg, $alarm = false, $the_device = null)
+        public function sendMessage($msg, $alarm = false, $device_number = 0, $subject = 'Important Message')
         {
-            // Grab the first device is none is specified
-            if(is_null($the_device))
-            {
-                reset($this->devices);
-                $the_device = current($this->devices);
-            }
+            $the_device = $this->devices[$device_number];
 
-            $arr = array('deviceId' => $the_device['deviceId'],
-                         'message' => $msg,
-                         'playAlarm' => $alarm ? 'Y' : 'N',
-                         'deviceType' => $the_device['deviceType'],
-                         'deviceClass' => $the_device['deviceClass'],
-                         'deviceOsVersion' => $the_device['deviceOsVersion']);
+			$json = sprintf('{"device":"%s","text":"%s","sound":%s,"subject":"%s","serverContext":{"prefsUpdateTime":1276872996660,"timezone":{"tzCurrentName":"Pacific Daylight Time","previousTransition":1268560799999,"previousOffset":-28800000,"currentOffset":-25200000,"tzName":"America/Los_Angeles"},"callbackIntervalInMS":10000,"maxDeviceLoadTime":60000,"validRegion":true,"maxLocatingTime":90000,"hasDevices":true,"sessionLifespan":900000,"deviceLoadStatus":200,"clientId":"","lastSessionExtensionTime":"1276872334744_1276873014045","preferredLanguage":"en","id":"server_ctx"},"clientContext":{"appName":"MobileMe Find (Web)","appVersion":"1.0"}}',
+			                $the_device->id, $msg, $alarm ? 'true' : 'false', $subject);
 
-            $post = 'postBody=' . json_encode($arr);
-
-            $headers = array('Accept: text/javascript, text/html, application/xml, text/xml, */*',
+            $headers = array('Content-Type: application/json: charset=UTF-8',
+                             'X-Inactive-Time: 1187',
                              'X-Requested-With: XMLHttpRequest',
                              'X-Prototype-Version: 1.6.0.3',
                              'Content-Type: application/json; charset=UTF-8',
+                             'X-Mobileme-User: ' . $this->username,
                              'X-Mobileme-Version: 1.0',
+                             'X-Sproutcore-Version: 1.0',
                              'X-Mobileme-Isc: ' . $this->lsc['secure.me.com']);
 
-            $html = $this->curlPost('https://secure.me.com/wo/WebObjects/DeviceMgmt.woa/wa/SendMessageAction/sendMessage', $post, 'https://secure.me.com/account/', $headers);
+            $html = $this->curlPost('https://secure.me.com/fmipservice/client/sendMessage', $json, 'https://secure.me.com/find/', $headers);
 
             $json = json_decode(array_pop(explode("\n", $html)));
             return ($json !== false) && isset($json->statusString) && ($json->statusString == 'message sent');
@@ -131,9 +103,6 @@
             // left to the reader.
         }
 
-        // Grab the details for each device on the MobileMe account
-        // (We could also use this opportunity to parse out the last know lat/lng of the device
-        // and save a couple round trips in the future.)
         private function getDevices()
         {
             $headers = array('Accept: text/javascript, text/html, application/xml, text/xml, */*',
