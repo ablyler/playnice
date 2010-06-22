@@ -109,14 +109,15 @@ do
     if ($try > 1) sleep($try * 10);
 
 	// Locate the device
-    $iphoneLocation = $mobileMe->locate();
-
-	// Verify we got a location back
-    if ((empty($iphoneLocation["latitude"])) || (empty($iphoneLocation["longitude"])))
-    {
-        echo "Error obtaining location\n";
-        exit();
-    }
+	try
+	{
+		$iphoneLocation = $mobileMe->locate();
+	}
+    catch (Exception $exception)
+	{
+		echo "Error obtaining location: " . $exception->getMessage() . "\n";
+		exit();
+	}
 
 	// Strip off microtime from unix timestamp
     $timestamp = substr($iphoneLocation["timestamp"], 0, 11);
@@ -127,7 +128,7 @@ do
         exit();
     }
 
-} while (($timestamp < ($time - (60 * 2))) && ($try <= 6));
+} while (($timestamp < ($time - (60 * 2))) && ($try <= 3));
 
 echo "got it.\n";
 echo "iPhone location: " . $iphoneLocation["latitude"] . ", " . $iphoneLocation["longitude"] . " as of: " . date("Y-m-d G:i:s T") . "\n";
