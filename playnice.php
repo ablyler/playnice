@@ -120,7 +120,7 @@ do
 	}
 
 	// Strip off microtime from unix timestamp
-    $timestamp = substr($iphoneLocation["timestamp"], 0, 11);
+    $timestamp = substr($iphoneLocation["timestamp"], 0, 10);
 
     if ($timestamp == false)
     {
@@ -131,10 +131,10 @@ do
 } while (($timestamp < ($time - (60 * 2))) && ($try <= 3));
 
 echo "got it.\n";
-echo "iPhone location: " . $iphoneLocation["latitude"] . ", " . $iphoneLocation["longitude"] . " as of: " . date("Y-m-d G:i:s T") . "\n";
+echo "iPhone location: " . $iphoneLocation["latitude"] . ", " . $iphoneLocation["longitude"] . " as of: " . date("Y-m-d G:i:s T", $timestamp) . "\n";
 
 // Log the location
-file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": $iphoneLocation{'latitude'}, $iphoneLocation{'longitude'}, $iphoneLocation{'accuracy'}\n", FILE_APPEND);
+file_put_contents($logFile, date("Y-m-d G:i:s T", $timestamp) . ": " . $iphoneLocation["latitude"] . ", " . $iphoneLocation["longitude"] . ", " .  $iphoneLocation["accuracy"] . "\n", FILE_APPEND);
 
 // Calculate how far the device has moved (if we know the pervious location)
 if ((isset($status["lat"])) && (isset($status["lon"])) && (isset($status["accuracy"])))
