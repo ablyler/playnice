@@ -1,6 +1,31 @@
+Playnice
+=========
+
+A tool to autmatically update Google Latitude with your iOS device's location.
+
+FEATURES
+--------
+
+ * Updates Google Latitude with your iOS device's location.
+ * Slows down polling interval when it detects your not moving.
+ * Logs your GPS position to a text file for easy tracking.
+
+INSTALL
+-------
+
+From [http://github.com/tylerhall/sosumi](sosumi): This script requires PHP 5.2 and the JSON extension, which should be included by default. PHP's CURL extension (with SSL support) is also required.
+
+UPDATES
+-------
+
+Code is hosted at GitHub: [http://github.com/ablyler/playnice](http://github.com/ablyler/playnice)
+
+LICENSE
+-------
+
 The MIT License
 
-Copyright (c) 2009 Nat Friedman <nat@nat.org>
+Copyright (c) 2009 Nat Friedman <nat@nat.org>, Andy Blyler <andy@blyler.cc>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
