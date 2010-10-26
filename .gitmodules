@@ -1,0 +1,3 @@
+[submodule "lib/sosumi"]
+	path = lib/sosumi
+	url = git://github.com/ablyler/sosumi.git

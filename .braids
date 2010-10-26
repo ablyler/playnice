@@ -1,8 +1,0 @@
---- 
-lib/sosumi: 
-  branch: master
-  remote: braid/lib/sosumi
-  revision: 93a21feb19e6d6b92c98f46940e8cf286278f7b8
-  squashed: true
-  type: git
-  url: git://github.com/ablyler/sosumi.git
