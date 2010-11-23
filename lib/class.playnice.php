@@ -109,20 +109,11 @@ class playnice
 		// Update device reference
 		$this->device = &$this->mobileMe->devices[$deviceNum];
 
-		// Strip off microtime from unix timestamp
-		$this->device->locationTimestamp = substr($this->device->locationTimestamp, 0, 10);
-
-		if ($this->device->locationTimestamp == false)
-		{
-			echo "Error parsing last update time from MobileMe\n";
-			exit();
-		}
-
 		echo "got it.\n";
-		echo "iPhone location: " . $this->device->latitude . ", " . $this->device->longitude . " as of: " . date("Y-m-d G:i:s T", $this->device->locationTimestamp) . "\n";
+		echo "iPhone location: " . $this->device->latitude . ", " . $this->device->longitude . " as of: " . $this->device->locationTimestamp . "\n";
 
 		// Log the location
-		file_put_contents($this->logFile, date("Y-m-d G:i:s T", $this->device->locationTimestamp) . ": " . $this->device->latitude . ", " . $this->device->longitude . ", " .  $this->device->horizontalAccuracy . "\n", FILE_APPEND);
+		file_put_contents($this->logFile, $this->device->locationTimestamp . ": " . $this->device->latitude . ", " . $this->device->longitude . ", " .  $this->device->horizontalAccuracy . "\n", FILE_APPEND);
 
 		// Calculate how far the device has moved (if we know the pervious location)
 		if ((isset($this->status["lat"])) && (isset($this->status["lon"])) && (isset($this->status["accuracy"])))
