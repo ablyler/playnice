@@ -15,6 +15,9 @@ INSTALL
 
 From [http://github.com/tylerhall/sosumi](sosumi): This script requires PHP 5.2 and the JSON extension, which should be included by default. PHP's CURL extension (with SSL support) is also required.
 
+ * git clone git://github.com/ablyler/playnice.git
+ * git submodule update --init
+
 UPDATES
 -------
 
