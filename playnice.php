@@ -27,7 +27,7 @@ include_once(BASE_PATH . "/lib/sosumi/class.sosumi.php");
 $statusFile = BASE_PATH . "/status.txt";
 $logFile = BASE_PATH . "/log.txt";
 
-$playnice = new playnice($statusFile);
+$playnice = new playnice($statusFile, $logFile);
 
 // check to see if we should wait to poll the device
 if ($playnice->waitSeconds > time())
