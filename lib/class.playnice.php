@@ -95,39 +95,28 @@ class playnice
 		    exit;
 		}
 
-		$time = time();
-		$try = 0;
-		do
+		// Locate the device
+		try
 		{
-		    $try++;
+			$this->mobileMe->locate($deviceNum);
+		}
+	    catch (Exception $exception)
+		{
+			echo "Error obtaining location: " . $exception->getMessage() . "\n";
+			exit();
+		}
 
-			// Backoff if this is not our first attempt
-		    if ($try > 1)
-				sleep($try * 10);
+		// Update device reference
+		$this->device = &$this->mobileMe->devices[$deviceNum];
 
-			// Locate the device
-			try
-			{
-				$this->mobileMe->locate($deviceNum);
-			}
-		    catch (Exception $exception)
-			{
-				echo "Error obtaining location: " . $exception->getMessage() . "\n";
-				exit();
-			}
+		// Strip off microtime from unix timestamp
+		$this->device->locationTimestamp = substr($this->device->locationTimestamp, 0, 10);
 
-			// Update device reference
-			$this->device = &$this->mobileMe->devices[$deviceNum];
-
-			// Strip off microtime from unix timestamp
-			$this->device->locationTimestamp = substr($this->device->locationTimestamp, 0, 10);
-
-			if ($this->device->locationTimestamp == false)
-			{
-				echo "Error parsing last update time from MobileMe\n";
-				exit();
-			}
-		} while (($this->device->locationTimestamp < ($time - (60 * 2))) && ($try <= 3));
+		if ($this->device->locationTimestamp == false)
+		{
+			echo "Error parsing last update time from MobileMe\n";
+			exit();
+		}
 
 		echo "got it.\n";
 		echo "iPhone location: " . $this->device->latitude . ", " . $this->device->longitude . " as of: " . date("Y-m-d G:i:s T", $this->device->locationTimestamp) . "\n";
