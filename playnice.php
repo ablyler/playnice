@@ -21,7 +21,7 @@ define("BASE_PATH", dirname(__FILE__));
 
 include_once(BASE_PATH . "/lib/class.google.php");
 include_once(BASE_PATH . "/lib/class.playnice.php");
-include_once(BASE_PATH . "/lib/sosumi/class.sosumi.php");
+include_once(BASE_PATH . "/lib/sosumi/class.sosumi.scraper.php");
 
 // Generate paths to store information
 $statusFile = BASE_PATH . "/status.txt";
