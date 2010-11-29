@@ -2,7 +2,7 @@
 
 define("BASE_PATH", dirname(__FILE__));
 
-include_once(BASE_PATH . "/lib/distance.php");
+include_once(BASE_PATH . "/lib/class.playnice.php");
 include_once(BASE_PATH . "/lib/class.google.php");
 
 // Parse the arguments
@@ -21,16 +21,11 @@ switch (count($argv))
 }
 
 // Generate paths to store information
-$googlePasswordFile = BASE_PATH . "/google-password.txt";
+$statusFile = BASE_PATH . "/status.txt";
+$logFile = BASE_PATH . "/log.txt";
 
-// Login to Google
-$google = new googleLatitude();
-@include($googlePasswordFile);
-while ((file_exists($googlePasswordFile) == false) || ($google->login($googleUsername, $googlePassword) == false))
-{
-	promptForLogin("Google", $googlePasswordFile, "google");
-	@include($googlePasswordFile);
-}
+$playnice = new playnice(null, $logFile, true);
+$playnice->googleLogin(BASE_PATH . "/google-password.txt");
 
 // Geocode the address
 if (isset($address))
@@ -59,45 +54,7 @@ if (isset($address))
 
 // Now update Google Latitude
 echo "Updating Google Latitude...";
-$google->updateLatitude($latitude, $longitude, "5");
+$playnice->updateLocation($latitude, $longitude, "5");
 
 // All done.
 echo "Done!\n";
-
-
-function promptForLogin($serviceName, $passwordFile, $variablePrefix)
-{
-	echo "\n";
-    echo "You will need to type your $serviceName username/password. Because this\n";
-    echo "is the first time you are running this script, or because authentication\n";
-    echo "has failed.\n\n";
-    echo "NOTE: They will be saved in $passwordFile so you don't have to type them again.\n";
-    echo "If you're not cool with this, you probably want to delete that file\n";
-    echo "at some point (they are stored in plaintext).\n\n";
-
-    echo "$serviceName username: ";
-    $username = trim(fgets(STDIN));
-
-    if (empty($username)) {
-		die("Error: No username specified.\n");
-    }
-
-    echo "$serviceName password: ";
-    system ('stty -echo');
-    $password = trim(fgets(STDIN));
-    system ('stty echo');
-    // add a new line since the users CR didn't echo
-    echo "\n";
-
-    if (empty ($password)) {
-		die ("Error: No password specified.\n");
-    }
-
-	if (!file_put_contents($passwordFile, "<?php\n\$" . $variablePrefix . "Username=\"$username\";\n\$" . $variablePrefix . "Password=\"$password\";\n?>\n")) {
-		echo "Unable to save $serviceName credentials to $passwordFile, please check permissions.\n";
-		exit;
-	}
-
-    // change the permissions of the password file
-	chmod($passwordFile, 0600);
-}

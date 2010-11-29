@@ -128,7 +128,7 @@ class playnice
 
 		// Now update Google Latitude
 		echo "Updating Google Latitude...";
-		$this->google->updateLatitude($this->device->latitude, $this->device->longitude, $this->device->horizontalAccuracy);
+		$this->updateLocation($this->device->latitude, $this->device->longitude, $this->device->horizontalAccuracy);
 
 		// Update status
 		$this->status["last_updated"] = time();
@@ -137,6 +137,11 @@ class playnice
 		$this->status["accuracy"] = $this->device->horizontalAccuracy;
 
 		file_put_contents($this->statusFile, serialize($this->status));
+	}
+
+	public function updateLocation($latitude, $longitude, $accuracy)
+	{
+		$this->google->updateLatitude($latitude, $longitude, $accuracy);
 	}
 
 	public function distance($lat1, $lon1, $accuracy1, $lat2, $lon2, $accuracy2)
