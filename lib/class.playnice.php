@@ -109,12 +109,6 @@ class playnice
 		// Update device reference
 		$this->device = &$this->mobileMe->devices[$deviceNum];
 
-		if ($this->device->locationOld)
-		{
-			echo "Device's location is stale, NOT updating Google Latitude\n";
-			exit();
-		}
-
 		echo "got it.\n";
 		echo "iPhone location: " . $this->device->latitude . ", " . $this->device->longitude . " as of: " . $this->device->locationTimestamp . "\n";
 
