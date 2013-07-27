@@ -3,6 +3,10 @@ Playnice
 
 A tool to autmatically update Google Latitude with your iOS device's location.
 
+OBSOLETE
+--------
+**Google Latitude will be retired on August 9th, 2013.**
+
 FEATURES
 --------
 
